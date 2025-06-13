@@ -4,7 +4,7 @@ class Env:
     def __init__(self, num_firms, p, h, c, initial_inventory, poisson_lambda=10, max_steps=100):
         """
         初始化供应链管理仿真环境。
-        
+
         :param num_firms: 企业数量
         :param p: 各企业的价格列表
         :param h: 库存持有成本
@@ -20,7 +20,7 @@ class Env:
         self.poisson_lambda = poisson_lambda  # 泊松分布的均值
         self.max_steps = max_steps  # 每个episode的最大步数
         self.initial_inventory = initial_inventory  # 初始库存
-        
+
         # 初始化库存
         self.inventory = np.full((num_firms, 1), initial_inventory)
         # 初始化订单量
@@ -48,7 +48,7 @@ class Env:
         获取每个企业的观察信息，包括订单量、满足的需求量和库存。
         每个企业的状态是独立的，包括自己观察的订单、需求和库存。
         """
-        return np.concatenate((self.orders, self.satisfied_demand, self.inventory), axis=1)
+        return np.concatenate((self.orders, self.satisfied_demand, self.inventory), axis=1) # (N, 3)
 
     def _generate_demand(self):
         """
@@ -68,12 +68,12 @@ class Env:
     def step(self, actions):
         """
         执行一个时间步的仿真，根据给定的行动 (每个企业的订单量) 更新环境状态。
-        
+
         :param actions: 每个企业的订单量 (shape: (num_firms, 1))，即每个智能体的行动
         :return: next_state, reward, done
         """
         self.orders = actions  # 更新订单量
-        
+
         # 生成各企业的需求
         self.demand = self._generate_demand()
 
@@ -85,31 +85,33 @@ class Env:
             else:
                 # 后续企业的需求由上游企业订单决定
                 self.satisfied_demand[i] = min(self.demand[i], self.inventory[i])
-        
+
         # 更新库存
         for i in range(self.num_firms):
             self.inventory[i] = self.inventory[i] + self.orders[i] - self.satisfied_demand[i]
-        
+
         # 计算每个企业的奖励: p_i * d_{it} - p_{i+1} * q_{it} - h * I_{it}
         rewards = np.zeros((self.num_firms, 1))
         loss_sales = np.zeros((self.num_firms, 1))  # 损失销售费用
-        
+
         for i in range(self.num_firms):
-            rewards[i] += self.p[i] * self.satisfied_demand[i] - (self.p[i+1] if i+1 < self.num_firms else 0) * self.orders[i] - self.h * self.inventory[i]
-            
+            rewards[i] += self.p[i] * self.satisfied_demand[i] \
+                          - (self.p[i + 1] if i + 1 < self.num_firms else 0) * self.orders[i] \
+                          - self.h * self.inventory[i]
+
             # 损失销售计算
             if self.satisfied_demand[i] < self.demand[i]:
                 loss_sales[i] = (self.demand[i] - self.satisfied_demand[i]) * self.c
-        
+
         rewards -= loss_sales  # 总奖励扣除损失销售成本
-        
+
         # 增加步数
         self.current_step += 1
-        
+
         # 判断是否结束（比如达到最大步数）
         if self.current_step >= self.max_steps:
             self.done = True
-        
+
         return self._get_observation(), rewards, self.done
 
 # 使用示例
