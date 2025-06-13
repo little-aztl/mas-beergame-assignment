@@ -7,6 +7,7 @@ import random
 from collections import deque
 import os
 
+
 # 复制环境类
 class Env:
     def __init__(self, num_firms, p, h, c, initial_inventory, poisson_lambda=10, max_steps=100):
@@ -583,7 +584,7 @@ if __name__ == "__main__":
     # 训练DQN智能体
     scores = train_dqn(env, agent, num_episodes=2000, max_t=max_steps, eps_start=1.0, eps_end=0.01, eps_decay=0.995)
 
-    plt.rcParams['font.sans-serif'] = ['SimHei']  # 指定中文字体
+    plt.rcParams['font.sans-serif'] = ['STHeiti']  # 指定中文字体
     plt.rcParams['axes.unicode_minus'] = False  # 绘图显示负号
 
     # 绘制训练结果
